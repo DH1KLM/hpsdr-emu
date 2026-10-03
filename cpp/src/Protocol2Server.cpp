@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstring>
 #include <thread>
+#include <span>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
