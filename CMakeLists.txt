@@ -56,4 +56,23 @@ if(BUILD_TESTING)
         target_compile_options(hpsdr-p1-integration-tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
     add_test(NAME hpsdr-p1-integration-tests COMMAND hpsdr-p1-integration-tests)
+
+    add_executable(hpsdr-p2-integration-tests
+        tests/Protocol2IntegrationTests.cpp
+        cpp/src/Protocol2Server.cpp
+        cpp/src/RadioState.cpp
+        cpp/src/PacketCodec.cpp
+        cpp/src/SignalGenerator.cpp
+        cpp/src/EchoBuffer.cpp
+    )
+    target_include_directories(hpsdr-p2-integration-tests PRIVATE cpp/include)
+    if(WIN32)
+        target_link_libraries(hpsdr-p2-integration-tests PRIVATE ws2_32)
+    endif()
+    if(MSVC)
+        target_compile_options(hpsdr-p2-integration-tests PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(hpsdr-p2-integration-tests PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME hpsdr-p2-integration-tests COMMAND hpsdr-p2-integration-tests)
 endif()
