@@ -15,7 +15,7 @@ public:
  Protocol2Server(const Protocol2Server&)=delete; Protocol2Server& operator=(const Protocol2Server&)=delete;
  bool start(); void stop();
 private:
- static constexpr int PortGeneral=1024,PortRxSpecific=1025,PortTxSpecific=1026,PortHighPriority=1027,PortTxAudio=1028,PortTxIq=1029,PortDdcBase=1035;
+ static constexpr int PortGeneral=1024,PortRxSpecific=1025,PortTxSpecific=1026,PortHighPriority=1027,PortTxAudio=1028,PortTxIq=1029,PortMic=1026,PortDdcBase=1035;
  static constexpr std::size_t SamplesPerDdcPacket=238,SamplesPerMicPacket=64;
  struct Peer{std::uint32_t address=0;std::uint16_t port=0;bool valid=false;};
  void receiveLoop(); void streamLoop();
