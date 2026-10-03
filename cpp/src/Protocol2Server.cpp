@@ -71,7 +71,11 @@ void Protocol2Server::stop(){if(!running_.exchange(false))return;state_.running=
 void Protocol2Server::receiveLoop(){
  std::array<std::uint8_t,4096>b{};
  while(running_){
-  fd_set set;FD_ZERO(&set);int maxfd=-1;for(auto s:sockets_)if(s>=0){FD_SET(SocketType(s),&set);
+  fd_set set;FD_ZERO(&set);
+#ifndef _WIN32
+  int maxfd=-1;
+#endif
+  for(auto s:sockets_)if(s>=0){FD_SET(SocketType(s),&set);
 #ifndef _WIN32
    maxfd=std::max(maxfd,s);
 #endif
