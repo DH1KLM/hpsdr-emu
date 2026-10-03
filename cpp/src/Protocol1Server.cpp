@@ -107,7 +107,7 @@ void Protocol1Server::fillSubframe(std::vector<std::uint8_t>&p,std::size_t o){
  auto a=ResponseAddrs[controlIndex_++%4];p[o+3]=std::uint8_t(a|0x80|(state_.ptt?1:0));
  if(a==0){p[o+4]=0;p[o+5]=state_.firmwareVersion;p[o+6]=state_.pennyVersion;p[o+7]=0;}
  else if(a==8){auto e=state_.ptt?std::uint16_t(state_.txDrive*10):0;auto f=state_.ptt?std::uint16_t((state_.txDrive*state_.txDrive)>>4):0;writeI16BE(p.data()+o+4,std::int16_t(e));writeI16BE(p.data()+o+6,std::int16_t(f));}
- else if(a==0x10){auto f=state_.ptt?std::uint16_t((state_.txDrive*state_.txDrive)>>4):0;auto r=(state_.ptt&&state_.txDrive>0)?std::max<std::uint16_t>(std::uint16_t(1),f/50):0;writeI16BE(p.data()+o+4,std::int16_t(r));writeI16BE(p.data()+o+6,3200);}
+ else if(a==0x10){auto f=state_.ptt?std::uint16_t((state_.txDrive*state_.txDrive)>>4):0;auto r=(state_.ptt&&state_.txDrive>0)?std::max<std::uint16_t>(std::uint16_t(1),static_cast<std::uint16_t>(f/50)):0;writeI16BE(p.data()+o+4,std::int16_t(r));writeI16BE(p.data()+o+6,3200);}
  else {auto pa=state_.ptt?std::uint16_t(state_.txDrive*5):0;writeI16BE(p.data()+o+4,std::int16_t(pa));writeI16BE(p.data()+o+6,3200);}
  std::vector<std::vector<std::complex<float>>> samples;for(std::size_t d=0;d<nddc;++d)samples.push_back(echo_ ? echo_->generateEcho(spr,state_.rxFrequencies[d],state_.sampleRate) : siggen_.generateIq(spr,d));
  auto*dst=p.data()+o+8;for(std::size_t row=0;row<spr;++row){for(std::size_t d=0;d<nddc;++d){auto iq=samples[d][row];auto i=std::int32_t(std::clamp(iq.real(),-1.0F,1.0F)*8388607.0F);auto q=std::int32_t(std::clamp(iq.imag(),-1.0F,1.0F)*8388607.0F);writeI24BE(dst,i);writeI24BE(dst+3,q);dst+=6;}dst[0]=dst[1]=0;dst+=2;}
