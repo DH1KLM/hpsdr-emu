@@ -21,7 +21,9 @@ void writeI24BE(std::uint8_t* p, std::int32_t value) {
     p[2] = static_cast<std::uint8_t>(v);
 }
 
-std::uint16_t readU16BE(const std::uint8_t* p) { return static_cast<std::uint16_t>((std::uint16_t(p[0]) << 8) | p[1]); }
+std::uint16_t readU16BE(const std::uint8_t* p) {
+    return static_cast<std::uint16_t>((std::uint16_t(p[0]) << 8) | p[1]);
+}
 
 std::int16_t readI16BE(const std::uint8_t* p) {
     const auto v = static_cast<std::uint16_t>(p[0] << 8 | p[1]);
@@ -32,6 +34,11 @@ void writeI16BE(std::uint8_t* p, std::int16_t value) {
     const auto v = static_cast<std::uint16_t>(value);
     p[0] = static_cast<std::uint8_t>(v >> 8);
     p[1] = static_cast<std::uint8_t>(v);
+}
+
+void writeU16BE(std::uint8_t* p, std::uint16_t value) {
+    p[0] = static_cast<std::uint8_t>(value >> 8);
+    p[1] = static_cast<std::uint8_t>(value);
 }
 
 std::uint32_t readU32BE(const std::uint8_t* p) {
