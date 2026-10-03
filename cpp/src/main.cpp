@@ -1,40 +1,34 @@
+#include "hpsdr/Protocol1Server.h"
 #include "hpsdr/RadioState.h"
-
-#include <cstdlib>
-#include <exception>
+#include "hpsdr/SignalGenerator.h"
+#include <chrono>
 #include <iostream>
 #include <string>
+#include <thread>
 
-int main(int argc, char** argv) {
-    hpsdr::HpsdrHw hw = hpsdr::HpsdrHw::HermesLite;
-
-    for (int i = 1; i < argc; ++i) {
-        const std::string arg = argv[i];
-        if (arg == "--radio" && i + 1 < argc) {
-            hw = hpsdr::parseRadioName(argv[++i]);
-        } else if (arg == "--help" || arg == "-h") {
-            std::cout << "hpsdr-emu-cpp --radio TYPE\n";
-            return 0;
-        } else {
-            std::cerr << "Unknown argument: " << arg << "\n";
-            return 2;
-        }
+int main(int argc,char** argv){
+    int protocol=1; std::string radio="hermeslite"; double freq=1000.0; double noise=3e-6;
+    for(int i=1;i<argc;++i){
+        std::string a=argv[i];
+        if((a=="--protocol")&&i+1<argc) protocol=std::stoi(argv[++i]);
+        else if(a=="--radio"&&i+1<argc) radio=argv[++i];
+        else if(a=="--freq"&&i+1<argc) freq=std::stod(argv[++i]);
+        else if(a=="--noise"&&i+1<argc) noise=std::stod(argv[++i]);
+        else if(a=="-v"||a=="--verbose"){}
+        else if(a=="-h"||a=="--help"){std::cout<<"hpsdr-emu --protocol {1,2} --radio TYPE --freq HZ --noise LEVEL\n";return 0;}
+        else {std::cerr<<"Unknown argument: "<<a<<"\n";return 2;}
     }
-
-    try {
-        const auto info = hpsdr::hwInfo(hw);
-        hpsdr::RadioState state;
-        state.hw = hw;
-        state.mac = hpsdr::RadioState::randomMac();
-        state.nddc = 1;
-
-        std::cout << "hpsdr-emu-cpp\n"
-                  << "radio: " << hpsdr::radioName(hw) << "\n"
-                  << "board code: " << static_cast<int>(info.code) << "\n"
-                  << "max DDCs: " << static_cast<int>(info.maxDdcs) << "\n";
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
-        return 1;
-    }
-    return 0;
+    if(protocol!=1){std::cerr<<"Protocol 2 port is the next implementation stage.\n";return 2;}
+    try{
+        hpsdr::RadioState state; state.hw=hpsdr::parseRadioName(radio); state.mac=hpsdr::RadioState::randomMac();
+        state.nddc=1;
+        hpsdr::SignalGenerator siggen(48000,freq,noise);
+        hpsdr::Protocol1Server server(state,siggen);
+        if(!server.start()){std::cerr<<"Failed to bind UDP port 1024\n";return 1;}
+        const auto info=hpsdr::hwInfo(state.hw);
+        std::cout<<"Protocol 1 listening on UDP 1024\n"
+                 <<"radio: "<<hpsdr::radioName(state.hw)<<" code="<<int(info.code)
+                 <<" maxDDCs="<<int(info.maxDdcs)<<"\n";
+        for(;;) std::this_thread::sleep_for(std::chrono::hours(24));
+    }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}
 }
