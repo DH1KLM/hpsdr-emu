@@ -2,6 +2,7 @@
 #include "hpsdr/RadioState.h"
 #include "hpsdr/SignalGenerator.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
