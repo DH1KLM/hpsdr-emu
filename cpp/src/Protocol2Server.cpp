@@ -1,5 +1,6 @@
 #include "hpsdr/Protocol2Server.h"
 #include "hpsdr/PacketCodec.h"
+#include "hpsdr/EchoBuffer.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -27,7 +28,7 @@ void closeSocket(SocketType s){
 }
 std::uint64_t nowMicros(){return std::uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());}
 }
-Protocol2Server::Protocol2Server(RadioState& s,SignalGenerator& g):state_(s),siggen_(g){sockets_.fill(-1);}
+Protocol2Server::Protocol2Server(RadioState& s,SignalGenerator& g,EchoBuffer* e):state_(s),siggen_(g),echo_(e){sockets_.fill(-1);}
 Protocol2Server::~Protocol2Server(){stop();}
 bool Protocol2Server::openSockets(){
 #ifdef _WIN32
@@ -102,18 +103,18 @@ void Protocol2Server::handleRxSpecific(const std::uint8_t*d,std::size_t n,std::u
 }
 void Protocol2Server::handleTxSpecific(const std::uint8_t*,std::size_t,std::uint32_t a,std::uint16_t p){client_={a,p,true};}
 void Protocol2Server::handleHighPriority(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){
- if(n<57)return;client_={a,p,true};state_.ptt=(d[4]&2)!=0;
+ if(n<57)return;client_={a,p,true};const bool newPtt=(d[4]&2)!=0; if(echo_ && newPtt!=state_.ptt){if(newPtt) echo_->startRecording(state_.txFrequency); else echo_->stopRecording();} state_.ptt=newPtt;
  for(std::size_t i=0;i<12;++i){auto o=9+i*4;if(o+4>n)break;auto f=readU32BE(d+o);if(f)state_.rxFrequencies[i]=f;}
  if(n>332){auto f=readU32BE(d+329);if(f)state_.txFrequency=f;}if(n>345)state_.txDrive=d[345];
  const bool run=(d[4]&1)!=0;if(run!=state_.running)state_.running=run;
 }
-void Protocol2Server::handleTxAudio(const std::uint8_t*,std::size_t,std::uint32_t a,std::uint16_t p){client_={a,p,true};}
-void Protocol2Server::handleTxIq(const std::uint8_t*,std::size_t,std::uint32_t a,std::uint16_t p){client_={a,p,true};}
+void Protocol2Server::handleTxAudio(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){client_={a,p,true};if(echo_&&state_.ptt&&n>4){auto x=d+4;auto len=n-4;auto iq=(len%6==0&&len>=360)?unpackTxIq24(std::span<const std::uint8_t>(x,len)):((len%4==0)?unpackTxAudio16(std::span<const std::uint8_t>(x,len)):std::vector<std::complex<float>>{});echo_->feed(iq);}}
+void Protocol2Server::handleTxIq(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){client_={a,p,true};if(echo_&&state_.ptt&&n>4)echo_->feed(unpackTxIq24(std::span<const std::uint8_t>(d+4,n-4)));}
 std::vector<std::uint8_t> Protocol2Server::buildDiscoveryResponse()const{
  std::vector<std::uint8_t>b(60);b[4]=2;std::copy(state_.mac.begin(),state_.mac.end(),b.begin()+5);b[11]=hwInfo(state_.hw).code;b[12]=1;b[13]=state_.firmwareVersion;b[14]=state_.mercuryVersions[0];b[15]=state_.mercuryVersions[1];b[16]=state_.mercuryVersions[2];b[17]=state_.mercuryVersions[3];b[18]=state_.pennyVersion;b[19]=state_.metisVersion;b[20]=state_.nddc;return b;
 }
 std::vector<std::uint8_t> Protocol2Server::buildHpStatus(){std::vector<std::uint8_t>b(60);writeU32BE(b.data(),state_.nextSeq("hp_status"));b[4]=state_.ptt?1:0;if(state_.ptt&&state_.txDrive){auto exc=std::uint16_t(state_.txDrive*10U),fwd=std::uint16_t((state_.txDrive*state_.txDrive)>>4),rev=std::max<std::uint16_t>(1,std::uint16_t(fwd/50));writeU16BE(b.data()+6,exc);writeU16BE(b.data()+14,fwd);writeU16BE(b.data()+22,rev);}return b;}
-std::vector<std::uint8_t> Protocol2Server::buildDdcIqPacket(std::size_t ddc){std::vector<std::uint8_t>b(16);writeU32BE(b.data(),state_.nextSeq("ddc_"+std::to_string(ddc)));auto t=nowMicros();for(unsigned i=0;i<8;++i)b[4+i]=std::uint8_t(t>>(56-8*i));writeU16BE(b.data()+12,24);writeU16BE(b.data()+14,std::uint16_t(SamplesPerDdcPacket));auto iq=siggen_.generateIq(SamplesPerDdcPacket,ddc);auto packed=packIq24(iq);b.insert(b.end(),packed.begin(),packed.end());return b;}
+std::vector<std::uint8_t> Protocol2Server::buildDdcIqPacket(std::size_t ddc){std::vector<std::uint8_t>b(16);writeU32BE(b.data(),state_.nextSeq("ddc_"+std::to_string(ddc)));auto t=nowMicros();for(unsigned i=0;i<8;++i)b[4+i]=std::uint8_t(t>>(56-8*i));writeU16BE(b.data()+12,24);writeU16BE(b.data()+14,std::uint16_t(SamplesPerDdcPacket));auto iq=echo_ ? echo_->generateEcho(SamplesPerDdcPacket,state_.rxFrequencies[ddc],state_.sampleRate) : siggen_.generateIq(SamplesPerDdcPacket,ddc);auto packed=packIq24(iq);b.insert(b.end(),packed.begin(),packed.end());return b;}
 std::vector<std::uint8_t> Protocol2Server::buildMicPacket(){std::vector<std::uint8_t>b(4+SamplesPerMicPacket*2);writeU32BE(b.data(),state_.nextSeq("mic"));return b;}
 bool Protocol2Server::sendFromPort(int port,const std::vector<std::uint8_t>&b){
  if(!client_.valid)return false;SocketType s=InvalidSocket;if(port>=PortDdcBase){auto i=std::size_t(port-PortDdcBase);if(i>=ddcSockets_.size())return false;s=SocketType(ddcSockets_[i]);}else if(port==PortHighPriority)s=SocketType(sockets_[1]);else if(port==PortMic)s=SocketType(sockets_[2]);if(s==InvalidSocket)return false;sockaddr_in dst{};dst.sin_family=AF_INET;dst.sin_addr.s_addr=client_.address;dst.sin_port=htons(client_.port);return sendto(s,reinterpret_cast<const char*>(b.data()),int(b.size()),0,reinterpret_cast<sockaddr*>(&dst),sizeof(dst))>=0;
