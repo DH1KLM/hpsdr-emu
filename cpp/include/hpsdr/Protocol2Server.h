@@ -8,9 +8,10 @@
 #include <vector>
 namespace hpsdr {
 //DH1KLM: Protocol 2 uses dedicated UDP ports for control and data streams.
+class EchoBuffer;
 class Protocol2Server {
 public:
- Protocol2Server(RadioState&,SignalGenerator&); ~Protocol2Server();
+ Protocol2Server(RadioState&,SignalGenerator&,EchoBuffer* echo=nullptr); ~Protocol2Server();
  Protocol2Server(const Protocol2Server&)=delete; Protocol2Server& operator=(const Protocol2Server&)=delete;
  bool start(); void stop();
 private:
@@ -30,7 +31,7 @@ private:
  std::vector<std::uint8_t> buildDdcIqPacket(std::size_t);
  std::vector<std::uint8_t> buildMicPacket();
  bool openSockets(); void closeSockets(); bool sendFromPort(int,const std::vector<std::uint8_t>&);
- RadioState& state_; SignalGenerator& siggen_; std::array<int,6> sockets_{}; std::vector<int> ddcSockets_;
+ RadioState& state_; SignalGenerator& siggen_; EchoBuffer* echo_; std::array<int,6> sockets_{}; std::vector<int> ddcSockets_;
  std::atomic_bool running_{false}; std::thread receiveThread_,streamThread_; Peer client_{};
 };
 }
