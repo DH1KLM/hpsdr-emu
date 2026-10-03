@@ -92,7 +92,7 @@ void Protocol1Server::handleDiscovery(const std::array<std::uint8_t,4>&ip,std::u
 void Protocol1Server::handleStart(const std::array<std::uint8_t,4>&ip,std::uint16_t p){clientIp_=ip;clientPort_=p;haveClient_=true;state_.running=true;}
 void Protocol1Server::handleStop(){state_.running=false;}
 void Protocol1Server::handleHostData(const std::uint8_t*d,std::size_t n){
- if(n<PacketSize)return; for(std::size_t o:{std::size_t(8),std::size_t(520)}){if(std::memcmp(d+o,Sync.data(),3)!=0)continue;processControl(d[o+3],d[o+4],d[o+5],d[o+6],d[o+7]);}
+ if(n<PacketSize)return; for(std::size_t o:{std::size_t(8),std::size_t(520)}){if(std::memcmp(d+o,Sync.data(),3)!=0)continue;processControl(d[o+3],d[o+4],d[o+5],d[o+6],d[o+7]);if(echo_&&state_.ptt){std::vector<std::uint8_t> tx(d+o+8,d+o+8+63*8);echo_->feed(unpackTxIq16(tx));}}
 }
 void Protocol1Server::processControl(std::uint8_t c0,std::uint8_t c1,std::uint8_t c2,std::uint8_t c3,std::uint8_t c4){
  const bool mox=(c0&1)!=0; if(echo_ && mox != state_.ptt){ if(mox) echo_->startRecording(state_.txFrequency); else echo_->stopRecording(); } const auto addr=std::uint8_t(c0&0xfeU);state_.ptt=mox;
