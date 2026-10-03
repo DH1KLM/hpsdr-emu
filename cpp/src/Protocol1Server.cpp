@@ -96,8 +96,8 @@ void Protocol1Server::handleHostData(const std::uint8_t*d,std::size_t n){
 void Protocol1Server::processControl(std::uint8_t c0,std::uint8_t c1,std::uint8_t c2,std::uint8_t c3,std::uint8_t c4){
  const bool mox=(c0&1)!=0;const auto addr=std::uint8_t(c0&0xfeU);state_.ptt=mox;
  if(addr==0){static constexpr std::array<std::uint32_t,4> rates{48000,96000,192000,384000};state_.sampleRate=rates[c1&3];siggen_.setSampleRate(state_.sampleRate);state_.nddc=std::uint8_t(((c4>>3)&7)+1);}
- else if(addr==2)state_.txFrequency=readU32BE(&c1);
- else if(addr>=4&&addr<0x12&&(addr%2)==0){auto ddc=std::size_t((addr-4)/2);if(ddc<state_.rxFrequencies.size())state_.rxFrequencies[ddc]=readU32BE(&c1);}
+ else if(addr==2){const std::array<std::uint8_t,4> v{c1,c2,c3,c4};state_.txFrequency=readU32BE(v.data());}
+ else if(addr>=4&&addr<0x12&&(addr%2)==0){auto ddc=std::size_t((addr-4)/2);if(ddc<state_.rxFrequencies.size()){const std::array<std::uint8_t,4> v{c1,c2,c3,c4};state_.rxFrequencies[ddc]=readU32BE(v.data());}}
  else if(addr==0x12)state_.txDrive=c1;
 }
 std::vector<std::uint8_t> Protocol1Server::buildDataPacket(){std::vector<std::uint8_t> p(PacketSize);p[0]=0xef;p[1]=0xfe;p[2]=1;p[3]=6;writeU32BE(p.data()+4,state_.nextSeq("p1_data"));fillSubframe(p,8);fillSubframe(p,520);return p;}
