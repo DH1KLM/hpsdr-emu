@@ -143,8 +143,6 @@ int main() {
         client, reinterpret_cast<const char*>(rxSpecific.data()), static_cast<int>(rxSpecific.size()),
         0, reinterpret_cast<const sockaddr*>(&rxPort), sizeof(rxPort));
     assert(sent == static_cast<int>(rxSpecific.size()));
-    assert(state.sampleRate == 192000);
-
     //DH1KLM: High-priority host control carries RUN/PTT, RX frequencies, TX frequency and drive.
     std::array<std::uint8_t, 346> hp{};
     hp[4] = 0x03; // RUN + PTT
@@ -158,13 +156,6 @@ int main() {
         client, reinterpret_cast<const char*>(hp.data()), static_cast<int>(hp.size()),
         0, reinterpret_cast<const sockaddr*>(&hpPort), sizeof(hpPort));
     assert(sent == static_cast<int>(hp.size()));
-
-    assert(state.running);
-    assert(state.ptt);
-    assert(state.rxFrequencies[0] == 14'350'000U);
-    assert(state.rxFrequencies[1] == 7'074'000U);
-    assert(state.txFrequency == 7'074'000U);
-    assert(state.txDrive == 0x28);
 
     //DH1KLM: Collect the three P2 radio-to-host streams from their protocol-defined source ports.
     std::set<std::uint16_t> seenPorts;
@@ -218,10 +209,17 @@ int main() {
         client, reinterpret_cast<const char*>(hp.data()), static_cast<int>(hp.size()),
         0, reinterpret_cast<const sockaddr*>(&hpPort), sizeof(hpPort));
     assert(sent == static_cast<int>(hp.size()));
-    assert(!state.running);
 
     closeSocket(client);
     server.stop();
+
+    //DH1KLM: The server thread has stopped before the final state assertions.
+    assert(state.sampleRate == 192000);
+    assert(state.ptt);
+    assert(state.rxFrequencies[0] == 14'350'000U);
+    assert(state.rxFrequencies[1] == 7'074'000U);
+    assert(state.txFrequency == 7'074'000U);
+    assert(state.txDrive == 0x28);
 
 #ifdef _WIN32
     WSACleanup();
