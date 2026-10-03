@@ -101,7 +101,7 @@ void Protocol2Server::handlePacket(int port,const std::uint8_t*d,std::size_t n,s
  switch(port){case PortGeneral:handleGeneral(d,n,a,p);break;case PortRxSpecific:handleRxSpecific(d,n,a,p);break;case PortTxSpecific:handleTxSpecific(d,n,a,p);break;case PortHighPriority:handleHighPriority(d,n,a,p);break;case PortTxAudio:handleTxAudio(d,n,a,p);break;case PortTxIq:handleTxIq(d,n,a,p);break;default:break;}
 }
 void Protocol2Server::handleGeneral(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){
- if(n<5)return;if(d[4]==0x00){client_={a,p,true};return;}if(d[4]!=0x02)return;client_={a,p,true};auto r=buildDiscoveryResponse();sockaddr_in dst{};dst.sin_family=AF_INET;dst.sin_addr.s_addr=a;dst.sin_port=htons(p);sendto(SocketType(sockets_[0]),reinterpret_cast<const char*>(r.data()),int(r.size()),0,reinterpret_cast<sockaddr*>(&dst),sizeof(dst));
+ if(n<5)return;if(d[4]==0x00){client_={a,p,true};return;}if(d[4]!=0x02)return;auto r=buildDiscoveryResponse();sockaddr_in dst{};dst.sin_family=AF_INET;dst.sin_addr.s_addr=a;dst.sin_port=htons(p);sendto(SocketType(sockets_[0]),reinterpret_cast<const char*>(r.data()),int(r.size()),0,reinterpret_cast<sockaddr*>(&dst),sizeof(dst));
 }
 void Protocol2Server::handleRxSpecific(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){
  if(n<5)return;client_={a,p,true};if(n>19){auto khz=readU16BE(d+18);if(khz){state_.sampleRate=std::uint32_t(khz)*1000U;siggen_.setSampleRate(state_.sampleRate);}}
