@@ -1,9 +1,11 @@
 #include "hpsdr/Protocol1Server.h"
+#include "hpsdr/Protocol2Server.h"
 #include "hpsdr/RadioState.h"
 #include "hpsdr/SignalGenerator.h"
 #include <chrono>
 #include <iostream>
 #include <string>
+#include <memory>
 #include <thread>
 
 int main(int argc,char** argv){
