@@ -67,7 +67,7 @@ void Protocol2Server::closeSockets(){
 #endif
 }
 bool Protocol2Server::start(){if(!openSockets())return false;running_=true;receiveThread_=std::thread(&Protocol2Server::receiveLoop,this);streamThread_=std::thread(&Protocol2Server::streamLoop,this);return true;}
-void Protocol2Server::stop(){if(!running_.exchange(false))return;state_.running=false;closeSockets();if(receiveThread_.joinable())receiveThread_.join();if(streamThread_.joinable())streamThread_.join();}
+void Protocol2Server::stop(){if(!running_.exchange(false))return;{std::lock_guard<std::mutex> lock(mutex_);state_.running=false;}closeSockets();if(receiveThread_.joinable())receiveThread_.join();if(streamThread_.joinable())streamThread_.join();}
 void Protocol2Server::receiveLoop(){
  std::array<std::uint8_t,4096>b{};
  while(running_){
