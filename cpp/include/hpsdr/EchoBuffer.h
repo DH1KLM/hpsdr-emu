@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
+#include <mutex>
 #include <vector>
 namespace hpsdr {
 //DH1KLM: TX IQ is recorded per frequency and replayed as a low-level RF echo.
@@ -23,5 +24,6 @@ private:
  std::vector<std::complex<float>> recording_; std::uint32_t recordingFrequency_=0; bool recordingActive_=false;
  std::unordered_map<std::uint32_t,std::size_t> playbackPos_;
  std::unordered_map<std::uint32_t,double> shiftPhase_;
+ std::mutex mutex_;
 };
 }
