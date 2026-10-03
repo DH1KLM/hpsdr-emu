@@ -114,7 +114,7 @@ void Protocol2Server::handleHighPriority(const std::uint8_t*d,std::size_t n,std:
  const bool run=(d[4]&1)!=0;if(run!=state_.running)state_.running=run;
 }
 void Protocol2Server::handleTxAudio(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){client_={a,p,true};if(echo_&&state_.ptt&&n>4){auto x=d+4;auto len=n-4;auto iq=(len%6==0&&len>=360)?unpackTxIq24(std::span<const std::uint8_t>(x,len)):((len%4==0)?unpackTxAudio16(std::span<const std::uint8_t>(x,len)):std::vector<std::complex<float>>{});if(!iq.empty()){if(!echoTxActive_){echo_->startRecording(state_.txFrequency);echoTxActive_=true;}echo_->feed(iq);}}}
-void Protocol2Server::handleTxIq(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){client_={a,p,true};if(echo_&&state_.ptt&&n>4){auto iq=unpackTxIq24(std::span<const std::uint8_t>(d+4,n-4));if(!iq.empty()){echo_->startRecording(state_.txFrequency);echo_->feed(iq);}}}
+void Protocol2Server::handleTxIq(const std::uint8_t*d,std::size_t n,std::uint32_t a,std::uint16_t p){client_={a,p,true};if(echo_&&state_.ptt&&n>4){auto iq=unpackTxIq24(std::span<const std::uint8_t>(d+4,n-4));if(!iq.empty()){if(!echoTxActive_){echo_->startRecording(state_.txFrequency);echoTxActive_=true;}echo_->feed(iq);}}}
 std::vector<std::uint8_t> Protocol2Server::buildDiscoveryResponse()const{
  std::vector<std::uint8_t>b(60);b[4]=2;std::copy(state_.mac.begin(),state_.mac.end(),b.begin()+5);b[11]=hwInfo(state_.hw).code;b[12]=1;b[13]=state_.firmwareVersion;b[14]=state_.mercuryVersions[0];b[15]=state_.mercuryVersions[1];b[16]=state_.mercuryVersions[2];b[17]=state_.mercuryVersions[3];b[18]=state_.pennyVersion;b[19]=state_.metisVersion;b[20]=state_.nddc;return b;
 }
