@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <chrono>
 #include <thread>
+#include <mutex>
 #include <vector>
 namespace hpsdr {
 //DH1KLM: Protocol 2 uses dedicated UDP ports for control and data streams.
@@ -33,6 +34,6 @@ private:
  std::vector<std::uint8_t> buildMicPacket();
  bool openSockets(); void closeSockets(); bool sendFromPort(int,const std::vector<std::uint8_t>&);
  RadioState& state_; SignalGenerator& siggen_; EchoBuffer* echo_; std::array<int,6> sockets_{}; std::vector<int> ddcSockets_;
- std::atomic_bool running_{false}; std::thread receiveThread_,streamThread_; Peer client_{}; bool echoTxActive_=false; std::chrono::steady_clock::time_point lastEchoTxData_{};
+ std::atomic_bool running_{false}; std::thread receiveThread_,streamThread_; Peer client_{}; bool echoTxActive_=false; std::mutex mutex_; std::chrono::steady_clock::time_point lastEchoTxData_{};
 };
 }
