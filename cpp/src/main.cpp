@@ -1,4 +1,5 @@
 #include "hpsdr/Protocol1Server.h"
+#include "hpsdr/EchoBuffer.h"
 #include "hpsdr/Protocol2Server.h"
 #include "hpsdr/RadioState.h"
 #include "hpsdr/SignalGenerator.h"
@@ -25,10 +26,10 @@ int main(int argc,char** argv){
         hpsdr::RadioState state; state.hw=hpsdr::parseRadioName(radio); state.mac=hpsdr::RadioState::randomMac();
         state.nddc=1;
         hpsdr::SignalGenerator siggen(48000,freq,noise);
-        hpsdr::Protocol1Server server(state,siggen);
-        if(!server.start()){std::cerr<<"Failed to bind UDP port 1024\n";return 1;}
+        hpsdr::EchoBuffer echo(state.sampleRate);\n        hpsdr::Protocol1Server p1(state,siggen,&echo);\n        hpsdr::Protocol2Server p2(state,siggen,&echo);\n        auto& server = (protocol==1) ? p1 : p2;
+        if(protocol!=1 && protocol!=2){std::cerr<<"Unsupported protocol: "<<protocol<<"\n";return 2;}\n        if(!server.start()){std::cerr<<"Failed to bind Protocol "<<protocol<<" UDP ports\n";return 1;}
         const auto info=hpsdr::hwInfo(state.hw);
-        std::cout<<"Protocol 1 listening on UDP 1024\n"
+        std::cout<<"Protocol "<<protocol<<" server started\n"
                  <<"radio: "<<hpsdr::radioName(state.hw)<<" code="<<int(info.code)
                  <<" maxDDCs="<<int(info.maxDdcs)<<"\n";
         for(;;) std::this_thread::sleep_for(std::chrono::hours(24));
