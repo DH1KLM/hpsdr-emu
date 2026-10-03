@@ -21,6 +21,8 @@ void writeI24BE(std::uint8_t* p, std::int32_t value) {
     p[2] = static_cast<std::uint8_t>(v);
 }
 
+std::uint16_t readU16BE(const std::uint8_t* p) { return static_cast<std::uint16_t>((std::uint16_t(p[0]) << 8) | p[1]); }
+
 std::int16_t readI16BE(const std::uint8_t* p) {
     const auto v = static_cast<std::uint16_t>(p[0] << 8 | p[1]);
     return static_cast<std::int16_t>(v);
