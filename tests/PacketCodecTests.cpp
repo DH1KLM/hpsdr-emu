@@ -49,7 +49,8 @@ int main() {
     }
 
     {
-        const std::uint8_t p2[] = {0x7f,0xff,0xff,0xff,0x80,0x00};
+        //DH1KLM: One Protocol 2 IQ sample is I(24-bit) followed by Q(24-bit).
+        const std::uint8_t p2[] = {0x7f,0xff,0xff,0x80,0x00,0x00};
         const auto iq = unpackTxIq24(p2);
         assert(iq.size() == 1);
         assert(iq[0].real() > 0.99F);
