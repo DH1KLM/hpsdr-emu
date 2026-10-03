@@ -9,6 +9,8 @@ add_executable(hpsdr-emu
     cpp/src/main.cpp
     cpp/src/RadioState.cpp
     cpp/src/PacketCodec.cpp
+    cpp/src/SignalGenerator.cpp
+    cpp/src/Protocol1Server.cpp
 )
 
 target_include_directories(hpsdr-emu PRIVATE cpp/include)
