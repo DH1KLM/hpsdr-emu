@@ -177,6 +177,15 @@ int main() {
     closeSocket(client);
     server.stop();
 
+    //DH1KLM: The server thread has stopped before these final state assertions,
+    // so the test does not race the UDP receive thread.
+    assert(state.sampleRate == 96000);
+    assert(state.nddc == 2);
+    assert(state.txFrequency == 0x14350000U);
+    assert(state.rxFrequencies[0] == 0x00d88000U);
+    assert(state.txDrive == 0x28);
+    assert(state.ptt);
+
 #ifdef _WIN32
     WSACleanup();
 #endif
