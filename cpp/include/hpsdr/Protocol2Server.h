@@ -32,6 +32,6 @@ private:
  std::vector<std::uint8_t> buildMicPacket();
  bool openSockets(); void closeSockets(); bool sendFromPort(int,const std::vector<std::uint8_t>&);
  RadioState& state_; SignalGenerator& siggen_; EchoBuffer* echo_; std::array<int,6> sockets_{}; std::vector<int> ddcSockets_;
- std::atomic_bool running_{false}; std::thread receiveThread_,streamThread_; Peer client_{};
+ std::atomic_bool running_{false}; std::thread receiveThread_,streamThread_; Peer client_{}; bool echoTxActive_=false;
 };
 }
