@@ -10,6 +10,7 @@ add_executable(hpsdr-emu
     cpp/src/RadioState.cpp
     cpp/src/PacketCodec.cpp
     cpp/src/SignalGenerator.cpp
+    cpp/src/EchoBuffer.cpp
     cpp/src/Protocol1Server.cpp
     cpp/src/Protocol2Server.cpp
 )
